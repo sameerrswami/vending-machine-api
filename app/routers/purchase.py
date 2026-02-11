@@ -36,7 +36,7 @@ def purchase(data: PurchaseRequest, db: Session = Depends(get_db)):
                     "inserted": inserted,
                 },
             )
-        raise
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/purchase/change-breakdown", response_model=ChangeBreakdownResponse)

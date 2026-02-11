@@ -45,7 +45,7 @@ def update_item_price(
     except ValueError as e:
         if str(e) == "item_not_found":
             _item_404()
-        raise
+        raise HTTPException(status_code=400, detail=str(e))  # it was missing
 
 
 @router.delete("/slots/{slot_id}/items/{item_id}", response_model=MessageResponse)
@@ -63,7 +63,7 @@ def remove_item_from_slot(
             _slot_404()
         if str(e) == "item_not_found":
             _item_404()
-        raise
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/slots/{slot_id}/items", response_model=MessageResponse)
@@ -79,4 +79,4 @@ def bulk_remove_items(
     except ValueError as e:
         if str(e) == "slot_not_found":
             _slot_404()
-        raise
+        raise HTTPException(status_code=400, detail=str(e))

@@ -36,7 +36,7 @@ def create_slot(data: SlotCreate, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Slot limit reached")
         if str(e) == "slot_code_exists":
             raise HTTPException(status_code=409, detail="Slot code already exists")
-        raise
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/slots", response_model=list[SlotResponse])
@@ -66,7 +66,9 @@ def delete_slot(slot_id: str, db: Session = Depends(get_db)):
     except ValueError as e:
         if str(e) == "slot_not_found":
             _slot_404()
-        raise
+        if str(e) == "slot_contains_items":
+            raise HTTPException(status_code=400, detail="Cannot delete slot with items")
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/slots/{slot_id}/items", response_model=ItemResponse, status_code=201)
@@ -87,7 +89,7 @@ def add_item_to_slot(slot_id: str, data: ItemCreate, db: Session = Depends(get_d
                 status_code=400,
                 detail="Total items would exceed slot capacity",
             )
-        raise
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/slots/{slot_id}/items/bulk", response_model=BulkAddResponse)
@@ -103,7 +105,7 @@ def bulk_add_items(slot_id: str, body: ItemBulkRequest, db: Session = Depends(ge
                 status_code=400,
                 detail="Total items would exceed slot capacity",
             )
-        raise
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/slots/{slot_id}/items", response_model=list[ItemResponse])
@@ -117,4 +119,4 @@ def list_slot_items(slot_id: str, db: Session = Depends(get_db)):
     except ValueError as e:
         if str(e) == "slot_not_found":
             _slot_404()
-        raise
+        raise HTTPException(status_code=400, detail=str(e))
