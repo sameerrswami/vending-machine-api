@@ -176,3 +176,75 @@
 - ✅ Real-time inventory tracking
 - ✅ Change calculation with denomination breakdown
 - ✅ Comprehensive error handling
+
+---
+
+## **Bugs Fixed During Development**
+
+### **1. Missing Denominations in Config**
+- **File**: `app/config.py`
+- **Issue**: `SUPPORTED_DENOMINATIONS` was `[5, 10, 20, 50, 100]` - missing 1 and 2
+- **Fix**: Changed to `[1, 2, 5, 10, 20, 50, 100]` as per specification
+- **Why**: Spec explicitly requires all 7 denominations for change calculation
+
+### **2. Price Validation Allowed Zero**
+- **File**: `app/schemas.py`
+- **Classes**: `ItemCreate`, `ItemBulkEntry`
+- **Issue**: `price: int = Field(..., ge=0)` allowed price = 0
+- **Fix**: Changed to `price: int = Field(..., gt=0)`
+- **Why**: Spec rule states "price > 0"
+
+### **3. Incorrect Capacity Logic**
+- **File**: `app/services/item_service.py`
+- **Function**: `add_item_to_slot()`
+- **Issue**: Had backwards check `if slot.current_item_count + data.quantity < settings.MAX_ITEMS_PER_SLOT`
+- **Fix**: Removed this line (correct check already existed above)
+- **Why**: Would raise error when count was LESS than max (opposite of intended)
+
+### **4. Missing Capacity Validation in Bulk Add**
+- **File**: `app/services/item_service.py`
+- **Function**: `bulk_add_items()`
+- **Issue**: No capacity validation before adding items
+- **Fix**: Added `total_qty = sum(e.quantity for e in entries)` and capacity check
+- **Why**: Spec rule "Total new quantity must not exceed slot capacity"
+
+### **5. Timestamp Preservation Bug**
+- **File**: `app/services/item_service.py`
+- **Function**: `update_item_price()`
+- **Issue**: Code preserved old `updated_at` timestamp when updating price
+- **Fix**: Removed timestamp preservation, let SQLAlchemy auto-update
+- **Why**: Prevents tracking when price was last modified
+
+### **6. Wrong Cascade Delete Configuration**
+- **File**: `app/models.py`
+- **Class**: `Slot`
+- **Issue**: `cascade="save-update, merge"` didn't delete items when slot deleted
+- **Fix**: Changed to `cascade="all, delete-orphan"`
+- **Why**: Items should be deleted when their slot is deleted
+
+### **7. Wrong Foreign Key Constraint**
+- **File**: `app/models.py`
+- **Class**: `Item`
+- **Issue**: `ondelete="SET NULL"` and `nullable=True` allowed orphaned items
+- **Fix**: Changed to `ondelete="CASCADE"` and `nullable=False`
+- **Why**: Items must belong to a slot and cascade delete with slot
+
+### **8. Missing Slot Deletion Validation**
+- **File**: `app/services/slot_service.py`
+- **Function**: `delete_slot()`
+- **Issue**: No check if slot contains items before deletion
+- **Fix**: Added `if slot.current_item_count > 0: raise ValueError("slot_contains_items")`
+- **Why**: Spec rule "Cannot delete if slot contains items"
+
+### **9. Missing Error Handler**
+- **File**: `app/routers/slots.py`
+- **Function**: `delete_slot()`
+- **Issue**: No error handling for slot_contains_items
+- **Fix**: Added handler returning 400 error with message
+- **Why**: Provide proper error response to user
+
+### **10. Demo Code Delays**
+- **Files**: `app/services/item_service.py`, `app/services/purchase_service.py`
+- **Issue**: `time.sleep(0.05)` delays in production code
+- **Fix**: Removed all sleep statements
+- **Why**: Unnecessary delays slow down API responses
