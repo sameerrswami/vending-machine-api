@@ -68,3 +68,4 @@ Docs: http://127.0.0.1:8000/docs
 - `POST /purchase` – purchase item
 - `GET /purchase/change-breakdown?change=<amount>` – change denomination breakdown
 - `GET /health` – health check
+
